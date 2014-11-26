@@ -12,5 +12,8 @@ setup(
     entry_points='''
         [console_scripts]
         photo_importer.py=photomgr.photo_importer:organize_images
+        zmq_streamer.py=photomgr.zmqutils.streamer:streamer_device
+        push_server.py=photomgr.zmqutils.push_server:server
+        push_test.py=photomgr.zmqutils.push_test:run_test
     ''',
 )
