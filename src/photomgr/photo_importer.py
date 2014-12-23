@@ -6,8 +6,10 @@ import shutil
 
 from PIL import Image
 from PIL.ExifTags import TAGS
+from unidecode import unidecode
 from dateutil.parser import parse as dateutil_parse
 import click
+
 
 def visit(arg, dirname, names):
     print dirname, arg
@@ -23,7 +25,7 @@ def visit(arg, dirname, names):
 ['YResolution', 'ResolutionUnit', 'Copyright', 'Make', 'Flash', 'SceneCaptureType', 'GPSInfo', 'MeteringMode', 'XResolution', 'MakerNote', 'ExposureProgram', 'ColorSpace', 'ExifImageWidth', 'DateTimeDigitized', 'ApertureValue', 'UserComment', 'FocalPlaneYResolution', 'WhiteBalance', 'FNumber', 'CustomRendered', 'DateTimeOriginal', 'Artist', 'FocalLength', 'SubsecTimeOriginal', 'ExposureMode', 'ComponentsConfiguration', 'FocalPlaneXResolution', 'ExifOffset', 'ExifImageHeight', 'SubsecTimeDigitized', 'ISOSpeedRatings', 'Model', 'DateTime', 'ExposureTime', 'FocalPlaneResolutionUnit', 'SubsecTime', 'Orientation', 'ExifInteroperabilityOffset', 'FlashPixVersion', 'YCbCrPositioning', 'ExifVersion'] """
 
 @click.command()
-@click.option('--dry-run', default=False)
+@click.option('--dry-run', is_flag=True, default=False)
 @click.argument('src_dir', type=click.Path(exists=True, dir_okay=True))
 @click.argument('dest_dir_base', type=click.Path(exists=True, dir_okay=True))
 def organize_images(dry_run, src_dir, dest_dir_base):
@@ -32,8 +34,9 @@ def organize_images(dry_run, src_dir, dest_dir_base):
     click.echo("importing from source dir: %s" % src_dir)
     click.echo("organizing into dir: %s" % dest_dir_base)
 
-    num_moved = 0
-    num_skipped = 0
+    #moved = 0
+    #skipped = 0
+
 
     def get_exif(fn):
         ret = {}
@@ -81,11 +84,12 @@ def organize_images(dry_run, src_dir, dest_dir_base):
         st = os.stat(full_fn)
 
         created = time.ctime(st.st_mtime)
-        click.echo("got creation date from os.stat: %s" % created)
+        #click.echo("got creation date from os.stat: %s" % created)
         original_fn, ext = os.path.splitext(full_fn)
 
-        new_fn = hashlib.md5(original_fn+u"|"+str(st.st_size)).\
-                hexdigest() + ext.lower()
+        new_fn = hashlib.md5(
+            unidecode(original_fn) +
+            u"|"+ unicode(st.st_size)).hexdigest() + ext.lower()
         created = dateutil_parse(created)
         #click.echo("%s %s" %(dest_dir_base, created.strftime('%Y/%m/%d')))
         photo_dir = os.path.\
@@ -99,15 +103,12 @@ def organize_images(dry_run, src_dir, dest_dir_base):
         click.echo(new_full_fn)
         if os.path.exists(new_full_fn):
             click.echo("%s exists. skipping." % new_full_fn)
-            num_skipped+=1
-
-        print "dry_run: ", dry_run
-        print "type dry_run: ", type(dry_run)
+            #skipped+=1
 
         if dry_run == False:
             click.echo("moving %s to %s" % (full_fn, new_full_fn))
             shutil.copy2(full_fn, new_full_fn)
-            num_moved+=1
+            #moved+=1
 
     def import_dir(arg, dirname, names):
         """
@@ -121,8 +122,8 @@ def organize_images(dry_run, src_dir, dest_dir_base):
 
     os.path.walk(src_dir, import_dir, '---')
 
-    click.echo("moved %d files" % num_moved)
-    click.echo("skipped %d files" % num_skipped)
+    #click.echo("moved %d files" % moved)
+    #click.echo("skipped %d files" % skipped)
 
 
 
